@@ -1,5 +1,6 @@
 package thread.juc.util.test;
 
+//卖100个商品
 public class CommoditySpikeDemo {
     private final Object LOCK = new Object();
     private int product = 100;
