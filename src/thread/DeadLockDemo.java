@@ -2,7 +2,7 @@ package thread;
 
 import java.util.concurrent.TimeUnit;
 
-public class DeadLockTest {
+public class DeadLockDemo {
     private final Object LOCK1 = new Object();
     private final Object LOCK2 = new Object();
 
@@ -47,6 +47,6 @@ public class DeadLockTest {
     }
 
     public static void main(String[] args) {
-        new DeadLockTest().foo();
+        new DeadLockDemo().foo();
     }
 }
