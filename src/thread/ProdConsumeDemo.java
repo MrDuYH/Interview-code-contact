@@ -20,12 +20,16 @@ public class ProdConsumeDemo {
         public void increment() {
             try {
                 lock.lock();
-                while (product != 0) {
+                while (product == 10) {
                     condition.await();
                 }
                 product++;
-                System.out.println(product);
-                condition.signalAll();
+                System.out.println("Producer: " + product);
+                if (product == 10) {
+                    TimeUnit.SECONDS.sleep(1);
+
+                    condition.signalAll();
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
@@ -40,8 +44,12 @@ public class ProdConsumeDemo {
                     condition.await();
                 }
                 product--;
-                System.out.println(product);
-                condition.signalAll();
+                System.out.println("consume:" + product);
+                if (product == 0) {
+                    TimeUnit.SECONDS.sleep(1);
+
+                    condition.signalAll();
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
@@ -51,68 +59,64 @@ public class ProdConsumeDemo {
 
         public void foo() {
             new Thread(() -> {
-                for (int i = 0; i < 5; i++) {
+                while (true) {
                     increment();
-                    try {
-                        TimeUnit.SECONDS.sleep(1);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
                 }
             }).start();
 
             new Thread(() -> {
-                for (int i = 0; i < 5; i++) {
+                while (true) {
                     decrement();
-                    try {
-                        TimeUnit.SECONDS.sleep(1);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
                 }
             }).start();
         }
     }
 
-    static class BlockQueueDemo{
+    static class BlockQueueDemo {
         BlockingQueue<Integer> queue = new ArrayBlockingQueue<>(10);
 
         public void increment() throws InterruptedException {
-            while(true){
+            while (true) {
                 queue.offer(1);
-                System.out.println("increment,queue size:"+queue.size());
+                System.out.println("increment,queue size:" + queue.size());
                 TimeUnit.SECONDS.sleep(1);
             }
         }
 
         public void decrement() throws InterruptedException {
-                while(true){
-                    queue.poll();
-                    System.out.println("decrement,queue size:"+queue.size());
-                    TimeUnit.SECONDS.sleep(2);
-                }
+            while (true) {
+                queue.poll();
+                System.out.println("decrement,queue size:" + queue.size());
+                TimeUnit.SECONDS.sleep(2);
+            }
         }
 
-        public void foo(){
-            new Thread(()->{
+        public void foo() {
+            new Thread(() -> {
                 try {
-                    increment();
+                    while (true) {
+                        increment();
+                    }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }).start();
 
-            new Thread(()->{
+            new Thread(() -> {
                 try {
-                    decrement();
+                    while (true) {
+                        decrement();
+                    }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }).start();
         }
     }
+
+
     public static void main(String[] args) {
-//        new LockDemo().foo();
-        new BlockQueueDemo().foo();
+        new LockDemo().foo();
+//        new BlockQueueDemo().foo();
     }
 }
