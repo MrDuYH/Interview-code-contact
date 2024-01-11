@@ -7,11 +7,59 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-//
+//生产者消费者
 public class ProdConsumeDemo {
 
+    static class WaitNotifyDemo {
+        int product = 0;
+        Object lock = new Object();
 
-    static class LockDemo {
+        public void produce() {
+            synchronized (lock) {
+                while (true) {
+                    while (product == 10) {
+                        try {
+                            lock.wait();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    product ++;
+                    System.out.println("Producer: " + product);
+                    if (product == 10) {
+                        lock.notify();
+                    }
+                }
+            }
+        }
+
+        public void consume() {
+            synchronized (lock) {
+                while (true) {
+                    while (product == 0) {
+                        try {
+                            lock.wait();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    product --;
+                    if (product == 0) {
+                        lock.notify();
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    System.out.println("consumer: " + product);
+                }
+            }
+        }
+
+    }
+
+    static class LockSupportDemo {
         private static int product = 0;
 
         Lock lock = new ReentrantLock();
@@ -19,16 +67,22 @@ public class ProdConsumeDemo {
 
         public void increment() {
             try {
+                //获取锁
                 lock.lock();
-                while (product == 10) {
-                    condition.await();
-                }
-                product++;
-                System.out.println("Producer: " + product);
-                if (product == 10) {
-                    TimeUnit.SECONDS.sleep(1);
-
-                    condition.signalAll();
+                //一直生产
+                while (true) {
+                    //生产到10个后,阻塞当前线程
+                    while (product == 10) {
+                        condition.await();
+                    }
+                    //产品+1
+                    product++;
+                    System.out.println("Producer: " + product);
+                    //生产到10个后,通知其他线程
+                    if (product == 10) {
+                        TimeUnit.SECONDS.sleep(1);
+                        condition.signalAll();
+                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -39,16 +93,22 @@ public class ProdConsumeDemo {
 
         public void decrement() {
             try {
+                //获取锁
                 lock.lock();
-                while (product == 0) {
-                    condition.await();
-                }
-                product--;
-                System.out.println("consume:" + product);
-                if (product == 0) {
-                    TimeUnit.SECONDS.sleep(1);
-
-                    condition.signalAll();
+                //一直消费
+                while (true) {
+                    //消费到0,阻塞当前线程
+                    while (product == 0) {
+                        condition.await();
+                    }
+                    //产品-1
+                    product--;
+                    System.out.println("consume:" + product);
+                    //产品为0,通知其他线程
+                    if (product == 0) {
+                        TimeUnit.SECONDS.sleep(1);
+                        condition.signalAll();
+                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -58,17 +118,9 @@ public class ProdConsumeDemo {
         }
 
         public void foo() {
-            new Thread(() -> {
-                while (true) {
-                    increment();
-                }
-            }).start();
+            new Thread(this::increment).start();
 
-            new Thread(() -> {
-                while (true) {
-                    decrement();
-                }
-            }).start();
+            new Thread(this::decrement).start();
         }
     }
 
@@ -114,9 +166,11 @@ public class ProdConsumeDemo {
         }
     }
 
-
     public static void main(String[] args) {
-        new LockDemo().foo();
-//        new BlockQueueDemo().foo();
+        WaitNotifyDemo waitNotifyDemo = new WaitNotifyDemo();
+        Thread t1 = new Thread(() -> waitNotifyDemo.produce());
+        t1.start();
+        Thread t2 = new Thread(() -> waitNotifyDemo.consume());
+        t2.start();
     }
 }
